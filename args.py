@@ -87,7 +87,7 @@ def add_training_args(parser) -> None:
         help='The distributed training port'
     )
     group.add_argument(
-        '--n_gpus', default=0, type=int,
+        '--n_gpus', default=1, type=int,
         help='The The number of gpus to train on'
     )
     group.add_argument(
