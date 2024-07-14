@@ -7,8 +7,7 @@ from layers import (
     )
 from torch import Tensor
 import torch
-from torch import Tensor
-import torch
+
 
 class Transformer(nn.Module):
     def __init__(
@@ -73,6 +72,7 @@ def get_model(
         voc_size: int,
         pad_idx: int
         ) -> nn.Module:
+    
     return Transformer(
         **get_model_args(args, voc_size, rank, pad_idx)
         )

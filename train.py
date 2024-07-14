@@ -219,6 +219,7 @@ def get_trainer(rank: int, args):
         rank,
         vocab_size,
         pad_idx=tokenizer.special_tokens.pad_id
+    
         )
     criterion = get_criterion(args, vocab_size)
     optimizer = get_optimizer(args, model.parameters())

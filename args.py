@@ -32,7 +32,7 @@ def add_model_args(parser) -> None:
     )
     group.add_argument(
         '--model', default='transformer', type=str,
-        help='The model architecture, either seq2seqrnn, basicrnn, or transformer'
+        help='The transformer model architecture '
     )
 
 
@@ -196,7 +196,7 @@ def get_train_args():
     return parser.parse_args()
 
 
-def get_rnn_args(
+def get_transformers_args(
         args, voc_size: int, rank: int, pad_idx: int
         ) -> dict:
     max_len = args.max_len
@@ -218,7 +218,7 @@ def get_model_args(
         args, voc_size: int, rank: int, pad_idx: int
         ) -> dict:
    
-    return get_rnn_args(
+    return get_transformers_args(
             args, voc_size, rank, pad_idx
             )
    
