@@ -39,7 +39,7 @@ def add_model_args(parser) -> None:
 def add_training_args(parser) -> None:
     group = parser.add_argument_group('Training Args')
     group.add_argument(
-        '--epochs', default=100, type=int,
+        '--epochs', default=5, type=int,
         help='The number of training epochs'
     )
     group.add_argument(
