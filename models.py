@@ -2,50 +2,38 @@ from typing import Tuple, Union
 from args import get_model_args
 from torch import nn
 from layers import (
-    RNNDecoder,
-    RNNEncoder
+    DecoderLayers,
+    EncoderLayers,
     )
 from torch import Tensor
 import torch
+from torch import Tensor
+import torch
 
-class Seq2SeqRNN(nn.Module):
+class Transformer(nn.Module):
     def __init__(
             self,
-            voc_size: int,
-            emb_size: int,
-            n_layers: int,
-            hidden_size: int,
-            bidirectional: bool,
-            padding_idx: int,
-            padding_value: int,
-            p_dropout: float,
-            max_len: int
+            enc_params: dict,
+            dec_params: dict,
+            h: int,
+            d_model: int,
+            device: str,
+            voc_size: int
             ) -> None:
         super().__init__()
-        self.encoder = RNNEncoder(
-            voc_size=voc_size,
-            emb_size=emb_size,
-            n_layers=n_layers,
-            hidden_size=hidden_size,
-            p_dropout=p_dropout,
-            bidirectional=bidirectional,
-            padding_idx=padding_idx,
-            padding_value=padding_value
+        self.encoder = EncoderLayers(
+            d_model=d_model,
+            h=h,
+            device=device,
+            **enc_params
         )
-        self.decoder = RNNDecoder(
-            max_len=max_len,
-            voc_size=voc_size,
-            emb_size=emb_size,
-            n_layers=n_layers,
-            hidden_size=hidden_size,
-            p_dropout=p_dropout,
-            bidirectional=bidirectional,
-            padding_idx=padding_idx,
-            padding_value=padding_value
+        self.decoder = DecoderLayers(
+            d_model=d_model,
+            h=h,
+            device=device,
+            **dec_params
         )
-
-    def get_lengths(self, mask: Tensor) -> Tensor:
-        return (~mask).sum(dim=-1)
+        self.fc = nn.Linear(d_model, voc_size)
 
     def forward(
             self,
@@ -53,40 +41,31 @@ class Seq2SeqRNN(nn.Module):
             dec_inp: Tensor,
             enc_mask: Tensor,
             dec_mask: Tensor
-            ) -> Tuple[Tensor, Tensor]:
-        enc_lengths = self.get_lengths(enc_mask).cpu()
-        dec_lengths = self.get_lengths(dec_mask).cpu()
-        enc_values, h = self.encoder(enc_inp, enc_lengths)
-        result, attention = self.decoder(
-            enc_values=enc_values,
-            hn=h,
-            x=dec_inp,
-            lengths=dec_lengths
+            ):
+        enc_vals = self.encoder(x=enc_inp, mask=enc_mask)
+        out, att = self.decoder(
+            x=dec_inp, mask=dec_mask, enc_values=enc_vals, key_mask=enc_mask
             )
-        return nn.functional.log_softmax(result, dim=-1), attention
+        out = self.fc(out)
+        return nn.functional.log_softmax(out, dim=-1), att
 
     def predict(
             self,
             dec_inp: Tensor,
             enc_inp: Tensor,
-            enc_mask,
-            h: Tensor,
-            key=None,
-            value=None
+            enc_mask=None,
+            dec_mask=None,
+            *args,
+            **kwargs
             ):
-        enc_lengths = self.get_lengths(enc_mask).cpu()
-        if key is None and value is None:
-            enc_values, h = self.encoder(enc_inp, enc_lengths)
-        else:
-            enc_values = None
-        h, att, result, key, value = self.decoder.predict(
-            hn=h,
-            x=dec_inp,
-            enc_values=enc_values,
-            key=key,
-            value=value
-        )
-        return h, att, result, key, value
+        if dec_inp.shape[1] == 1:
+            enc_inp = self.encoder(x=enc_inp, mask=enc_mask)
+        out, att = self.decoder(
+            x=dec_inp, mask=dec_mask, enc_values=enc_inp, key_mask=enc_mask
+            )
+        out = self.fc(out)
+        return enc_inp, nn.functional.log_softmax(out, dim=-1), att
+
 
 def get_model(
         args,
@@ -94,6 +73,6 @@ def get_model(
         voc_size: int,
         pad_idx: int
         ) -> nn.Module:
-        return Seq2SeqRNN(
-            **get_model_args(args, voc_size, rank, pad_idx)
+    return Transformer(
+        **get_model_args(args, voc_size, rank, pad_idx)
         )
