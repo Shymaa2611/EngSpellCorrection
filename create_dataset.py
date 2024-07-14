@@ -7,7 +7,7 @@ import csv
 import random
 from itertools import islice
 import os
-
+import pandas as pd
 nltk.download('wordnet')
 nouns = set(word.name().split('.')[0] for word in wn.all_synsets('n'))
 verbs = set(word.name().split('.')[0] for word in wn.all_synsets('v'))
@@ -41,32 +41,29 @@ def create_dataset():
       csvwriter.writerows(dataset)
     print(f'Dataset with {num_records} records saved to {csv_filename}')
 
-def read_csv(filename):
-    with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
-        csvreader = csv.reader(csvfile)
-        data = list(csvreader)
-    return data
+def read_csv(file_path):
+    return pd.read_csv(file_path)
 
-def write_csv(filename, data):
-    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerows(data)
+def write_csv(file_path, data):
+    data.to_csv(file_path, index=False)
 
 def split_dataset():
-   original_data = read_csv('dataset.csv')
-   random.shuffle(original_data)
-   train_size = int(0.7 * len(original_data))
-   test_size = int(0.2 * len(original_data))
-   dev_size = len(original_data) - train_size - test_size
-   train_data = original_data[:train_size]
-   test_data = original_data[train_size:train_size + test_size]
-   dev_data = original_data[train_size + test_size:]
-   write_csv('EnglishDataset\\train.csv', train_data)
-   write_csv('EnglishDataset\\test.csv', test_data)
-   write_csv('EnglishDataset\\dev.csv', dev_data)
-   os.remove('dataset.csv')
-   print(f'Dataset split into train.csv ({len(train_data)} records), test.csv ({len(test_data)} records), and dev.csv ({len(dev_data)} records).')
-   
+    original_data = read_csv('dataset.csv')
+    original_data = original_data.sample(frac=1).reset_index(drop=True)  # Shuffle data
+    train_size = int(0.7 * len(original_data))
+    test_size = int(0.2 * len(original_data))
+    dev_size = len(original_data) - train_size - test_size
+    
+    train_data = original_data[:train_size]
+    test_data = original_data[train_size:train_size + test_size]
+    dev_data = original_data[train_size + test_size:]
+    
+    write_csv('EnglishDataset/train.csv', train_data)
+    write_csv('EnglishDataset/test.csv', test_data)
+    write_csv('EnglishDataset/dev.csv', dev_data)
+    
+    os.remove('dataset.csv')
+    print(f'Dataset split into train.csv ({len(train_data)} records), test.csv ({len(test_data)} records), and dev.csv ({len(dev_data)} records).')
 
 if __name__=="__main__":   
    create_dataset()

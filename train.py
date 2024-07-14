@@ -266,5 +266,6 @@ def main(args):
 
 if __name__ == '__main__':
     args = get_train_args()
-    print(args)
+    #print(args)
     main(args)
+    print("train done !")
