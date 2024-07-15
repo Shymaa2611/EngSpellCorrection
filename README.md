@@ -74,5 +74,6 @@ predictor = get_predictor(
     device=device
 )
 text = 'haw era you today'
+print(predictor.predict(text))
 
 ```
