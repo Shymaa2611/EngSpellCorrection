@@ -25,6 +25,7 @@
 ```
 
 ## Checkpoint
+ - You can access the checkpoint [here](https://drive.google.com/drive/folders/1eX_vmnrrvwofG54pZCa2Yxlyfer8l4La?usp=drive_link)
 
 
 ## Inference 
@@ -58,13 +59,14 @@ args = get_train_args()
 args.tokenizer_path = 'outdir/tokenizer.json' 
 args.hidden_size = 256
 args.n_layers = 3
+args.model = 'transformer' 
 tokenizer = get_tokenizer(args)
-model = get_model(
-    args, voc_size=tokenizer.vocab_size, rank=0, pad_idx=tokenizer.special_tokens.pad_id
-    )
-model.load_state_dict(load_state(checkpoint_path)[0])
-_ = model.to(device).eval()
-
+model = get_model(args, voc_size=tokenizer.vocab_size, rank=0, pad_idx=tokenizer.special_tokens.pad_id)
+state_data = load_state(checkpoint_path)
+state_dict = state_data[0]  
+filtered_state_dict = {k: v for k, v in state_dict.items() if k in model.state_dict()}
+model.load_state_dict(filtered_state_dict)
+model = model.to(device).eval()
 predictor = get_predictor(
     args=args,
     model=model,
